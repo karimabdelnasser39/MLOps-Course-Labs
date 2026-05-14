@@ -1,49 +1,53 @@
-"""
-Churn Prediction API
-
-Run with:
-    litestar --app main:app run --reload
-Then open:
-    http://localhost:8000/schema/swagger
-"""
-
-from litestar import Litestar
+from litestar import Litestar, get, post
 from pydantic import BaseModel
-
+from app.model_utils import predict_churn
 from app.logger_setup import setup_logging
 
 logger = setup_logging()
 
 
-# ---------------------------------------------------------------------------
-# Request Schema
-# ---------------------------------------------------------------------------
 class ChurnRequest(BaseModel):
-    # TODO 1: Add one field (type float) per feature your model expects
-    pass
+    CreditScore: float
+    Age: float
+    Tenure: float
+    Balance: float
+    NumOfProducts: float
+    HasCrCard: float
+    IsActiveMember: float
+    EstimatedSalary: float
+    Geography_Germany: int
+    Geography_Spain: int
+    Gender_Male: int
 
 
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
-
-# TODO 2: Create a GET endpoint at "/" that returns a welcome message
-#         Log that the home endpoint was accessed
-
-# TODO 3: Create a GET endpoint at "/health" that returns {"status": "healthy"}
-
-# TODO 4: Create a POST endpoint at "/predict" that:
-#         - Accepts a ChurnRequest as the data parameter
-#         - Extracts features into a list
-#         - Calls predict_churn(features)
-#         - Returns the prediction
-#         - Logs the input features and the prediction result
+@get("/", sync_to_thread=False)
+def home() -> dict[str, str]:
+    return {"message": "Welcome to the Churn Prediction Service"}
 
 
-# ---------------------------------------------------------------------------
-# App
-# ---------------------------------------------------------------------------
-# TODO 5: Register your endpoint functions in the list below
-app = Litestar(
-    route_handlers=[],
-)
+@get("/health", sync_to_thread=False)
+def health() -> dict[str, str]:
+    return {"status": "healthy"}
+
+
+@post("/predict", sync_to_thread=False)
+def predict(data: ChurnRequest) -> dict[str, int]:
+    features = [
+        data.CreditScore,
+        data.Age,
+        data.Tenure,
+        data.Balance,
+        data.NumOfProducts,
+        data.HasCrCard,
+        data.IsActiveMember,
+        data.EstimatedSalary,
+        data.Geography_Germany,
+        data.Geography_Spain,
+        data.Gender_Male,
+    ]
+
+    prediction = predict_churn(features)
+    return {"prediction": prediction}
+
+
+app = Litestar(route_handlers=[home, health, predict])

@@ -1,24 +1,36 @@
-"""
-Model loading and prediction logic.
+import joblib
+import pandas as pd
+import os
+from app.logger_setup import setup_logging
 
-The model must be loaded ONCE at module level, NOT inside the predict function.
-"""
+logger = setup_logging()
 
-# TODO 1: Load your serialized churn model from data/model.joblib
-model = ...
-
-
-def predict_churn(features: list[float]) -> int:
-    """
-    Takes a list of feature values and returns a churn prediction (0 or 1).
-    """
-    # TODO 2: Use model.predict() to get a prediction and return it as an int
-    #         Hint: model.predict() expects a 2D array
-    pass
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "model.pkl")
 
 
-if __name__ == "__main__":
-    # TODO 3: Replace with sample features that match your model
-    sample = []
-    print(f"Input:      {sample}")
-    print(f"Prediction: {predict_churn(sample)}")
+def predict_churn(features: list) -> int:
+    try:
+        model = joblib.load(MODEL_PATH)
+
+        # These names MUST match the "Feature names seen at fit time" in your error log
+        columns = [
+            "standardscaler__CreditScore",
+            "standardscaler__Age",
+            "standardscaler__Tenure",
+            "standardscaler__Balance",
+            "standardscaler__NumOfProducts",
+            "standardscaler__HasCrCard",
+            "standardscaler__IsActiveMember",
+            "standardscaler__EstimatedSalary",
+            "onehotencoder__Geography_Germany",
+            "onehotencoder__Geography_Spain",
+            "onehotencoder__Gender_Male",
+        ]
+
+        input_df = pd.DataFrame([features], columns=columns)
+        prediction = model.predict(input_df)
+        return int(prediction[0])
+
+    except Exception as e:
+        logger.error(f"Prediction Error: {e}")
+        raise e
