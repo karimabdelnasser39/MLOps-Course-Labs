@@ -19,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10" # Adjusted to a standard version for Churn lab
+          python-version: "3.12"
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
@@ -29,6 +29,7 @@ jobs:
 
   build-and-push:
     needs: test-and-validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -48,26 +49,25 @@ jobs:
         with:
           context: .
           push: true
-          # This automatically tags the image with your username
           tags: ${{ secrets.DOCKER_USERNAME }}/mlops-course-labs-app:latest
 
   deploy-to-ec2:
-    name: Connecting to EC2 instance
+    name: Deploy to EC2
     runs-on: ubuntu-latest
     needs: build-and-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - name: Connect to EC2 instance
+      - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          # env vars are not available in the remote SSH shell,
-          # so the image name and port are hardcoded here
           script: |
             docker pull ${{ secrets.DOCKER_USERNAME }}/mlops-course-labs-app:latest
             docker stop churn-prediction-api || true
             docker rm churn-prediction-api || true
-            docker run -d -p 80:8000 --name churn-prediction-api \
+            docker run -d -p 80:8000 -p 443:8000 \
+              -e MODEL_PATH=/app/data/model.pkl \
+              --name churn-prediction-api \
               ${{ secrets.DOCKER_USERNAME }}/mlops-course-labs-app:latest

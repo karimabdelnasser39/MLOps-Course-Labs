@@ -2,6 +2,8 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+ENV MODEL_PATH=/app/data/model.pkl
+
 COPY pyproject.toml README.md ./
 COPY app/ ./app/
 COPY main.py ./
