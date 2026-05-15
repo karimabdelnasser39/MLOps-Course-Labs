@@ -69,5 +69,5 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/mlops-course-labs-app:latest
             docker stop churn-prediction-api || true
             docker rm churn-prediction-api || true
-            docker run -d -p 443:8000 --name churn-prediction-api \
+            docker run -d -p 80:8000 --name churn-prediction-api \
               ${{ secrets.DOCKER_USERNAME }}/mlops-course-labs-app:latest
