@@ -50,9 +50,3 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/churn-prediction:latest
 
-  deploy-to-ec2:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deployment Placeholder
-        run: echo "Ready to deploy the churn prediction model to EC2."
